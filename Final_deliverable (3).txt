@@ -1,0 +1,256 @@
+CREATE TABLE seller(
+seller_id DECIMAL(10) NOT NULL,
+seller_Fname VARCHAR(100) NOT NULL,
+seller_Lname VARCHAR(100),
+PRIMARY KEY (seller_id));
+
+CREATE TABLE product_category(
+category_id DECIMAL(10) NOT NULL,
+category_name VARCHAR(100) NOT NULL,
+PRIMARY KEY (category_id));
+
+CREATE TABLE products(
+product_id DECIMAL(10) NOT NULL,
+product_name VARCHAR(100) NOT NULL,
+description VARCHAR(200),
+price DECIMAL(10) NOT NULL,
+category_id DECIMAL(10) NOT NULL,
+PRIMARY KEY (product_id),
+FOREIGN KEY (category_id) REFERENCES product_category);  
+
+INSERT INTO SELLER VALUES(001, 'John', 'Smith');
+INSERT INTO SELLER VALUES(002, 'Marshall', 'Eriksen');
+INSERT INTO product_category VALUES(1001, 'Electronics');
+INSERT INTO product_category VALUES(1002, 'Books and Reading');
+INSERT INTO product_category VALUES(1003, 'Fashion');
+INSERT INTO Products VALUES(106, 'Beats Solo3 Headphones', 'Upto 40 hours of battery life', 30, 1001);
+INSERT INTO Products VALUES(107, 'Smart Plug', 'Works exclusively with Alexa', 24.99, 1001);
+
+create or replace PROCEDURE ADD_PRODUCT(
+product_id_arg IN DECIMAL,
+product_name_arg IN VARCHAR,
+product_description_arg IN VARCHAR,
+price_arg IN DECIMAL,
+product_category_arg IN DECIMAL)
+IS 
+BEGIN
+INSERT INTO PRODUCTS
+(product_id, product_name, description, price, category_id)
+VALUES (product_id_arg, product_name_arg, product_description_arg, price_arg, product_category_arg);
+END;        
+
+BEGIN
+ADD_PRODUCT(101, 'Self-Driving Video Camera', 'Self‐driving video camera which automatically follows a subject that is being recorded', 999, 1001);
+END;  
+
+BEGIN
+ADD_PRODUCT(102,'Holographic keyboard','keyboard that emits a three‐dimensional projection of a keyboard and recognizes virtual key presses from the typist',75,1001);
+END; 
+
+Select product_id, product_name, price, pc.category_id, pc.category_name from products p
+INNER JOIN product_category pc on p.category_id = pc.category_id
+Where (pc.category_name = 'Computers' or pc.category_name = 'Electronics')
+and price <= 30;
+
+CREATE TABLE Inventory(
+Inventory_ID DECIMAL(10) PRIMARY KEY,
+product_id DECIMAL(10) NOT NULL,
+seller_ID DECIMAL(10) NOT NULL,
+inventory_num DECIMAL(10),
+FOREIGN KEY (product_id) REFERENCES products);
+
+ALTER TABLE INVENTORY
+ADD CONSTRAINT inventory_seller_fk
+FOREIGN KEY (seller_id)
+REFERENCES seller(seller_id);
+
+CREATE OR REPLACE PROCEDURE ADD_INVENTORY(
+Inventory_ID_arg IN  DECIMAL,
+product_id_arg IN DECIMAL,
+seller_ID_arg IN DECIMAL,
+inventory_num_arg IN DECIMAL)
+IS 
+BEGIN
+INSERT INTO INVENTORY
+(inventory_id, product_id, seller_id, inventory_num)
+VALUES (inventory_id_arg, product_id_arg, seller_id_arg, inventory_num_arg);
+END;     
+
+BEGIN
+ADD_INVENTORY(10001, 101, 002, 8);
+END; 
+/
+  
+BEGIN
+ADD_INVENTORY(10002, 102, 001, 10);
+END; 
+/
+
+SELECT p.product_name, p.product_id, i.inventory_id, i.inventory_num
+FROM products p 
+JOIN inventory i on p.product_id= i.product_id
+WHERE i.inventory_num < 11     
+
+CREATE TABLE Consumer(
+consumer_id DECIMAL(10) PRIMARY KEY,
+consumer_Fname VARCHAR(100) NOT NULL,
+consumer_Lname VARCHAR(100) NOT NULL,
+address VARCHAR(250),
+email_id VARCHAR(150) NOT NULL);
+
+CREATE OR REPLACE PROCEDURE ADD_CONSUMER(
+consumer_id_arg DECIMAL,
+consumer_Fname_arg IN VARCHAR,
+consumer_Lname_arg IN VARCHAR,
+address_arg IN VARCHAR,
+email_id_arg IN VARCHAR)
+IS
+BEGIN
+INSERT INTO CONSUMER
+(consumer_id, consumer_Fname, consumer_Lname, address, email_id)
+VALUES(consumer_id_arg, consumer_Fname_arg, consumer_Lname_arg, address_arg, email_id_arg);
+END;           
+
+BEGIN
+ADD_CONSUMER(11111, 'David', 'Rose', 'Hollywood Street, Worcester, MA', 'drose@gmail.com');
+END;           
+/
+
+BEGIN
+ADD_CONSUMER(11112, 'Alexis', 'Rose', 'Clifton Street, Boston, MA', 'alexisrose@gmail.com');
+END;           
+/
+
+BEGIN
+ADD_CONSUMER(11113, 'Michael', 'Scott', 'May Street, Germantown, MD', 'scott@gmail.com');
+END;           
+/
+
+INSERT INTO CONSUMER VALUES(11114, 'Johnny', 'Rose', 'Street, Boston, MA', 'jr@gmail.com');
+INSERT INTO CONSUMER VALUES(11115, 'Moira', 'Rose', 'Street, Boston, MA', 'moirar@gmail.com');
+INSERT INTO CONSUMER VALUES(11116, 'Jan', 'Scott', 'Scranton Apt, Scanton, Penn', 'janscott@gmail.com');
+INSERT INTO CONSUMER VALUES(11117, 'Pam', 'Scott', 'Street, Boston, MA', 'spam@gmail.com');
+INSERT INTO CONSUMER VALUES(11118, 'Jim', 'Scott', 'Scranton Apt, Scanton, Penn', 'jimscott@gmail.com');
+
+Select consumer_lname, count(1) from consumer
+GROUP BY consumer_lname HAVING count(1) > 3 ;
+
+CREATE TABLE Orders (
+Order_ID DECIMAL(10) PRIMARY KEY,
+Product_ID DECIMAL(10),
+Quantity DECIMAL(10),
+Consumer_ID DECIMAL(10),
+FOREIGN KEY (Consumer_ID) REFERENCES Consumer,
+FOREIGN KEY (Product_ID) REFERENCES Products);
+
+CREATE OR REPLACE PROCEDURE ADD_ORDER_UPDATE_INVENTORY(
+order_ID_arg IN DECIMAL,
+Product_ID_arg IN DECIMAL,
+Quantity_arg IN DECIMAL,
+consumer_ID_arg IN DECIMAL)
+IS 
+BEGIN
+INSERT INTO ORDERS(Order_ID, Product_ID, Quantity, Consumer_ID)
+VALUES(Order_ID_arg, Product_ID_arg, Quantity_arg, Consumer_ID_arg);
+
+UPDATE INVENTORY
+SET INVENTORY_NUM = INVENTORY_NUM - Quantity_arg
+WHERE product_id = Product_ID_arg;
+END;
+
+BEGIN
+ADD_ORDER_UPDATE_INVENTORY(999999, 101, 1, 11112);
+END;
+/ 
+
+BEGIN
+ADD_ORDER_UPDATE_INVENTORY(888888, 102, 3, 11113);
+END;
+/ 
+
+BEGIN
+ADD_ORDER_UPDATE_INVENTORY(999996, 101, 1, 11116);
+END;
+/ 
+
+BEGIN
+ADD_ORDER_UPDATE_INVENTORY(999997, 101, 1, 11118);
+END;
+/ 
+
+BEGIN
+ADD_ORDER_UPDATE_INVENTORY(999998, 101, 1, 11117);
+END;
+/ 
+
+Select cs.consumer_fname, cs.consumer_lname, cs.address from consumer cs 
+JOIN  Orders od on od.consumer_id= cs.consumer_id where od.product_id in (Select o.product_id from products p
+Join orders o on p.product_id=o.product_id
+Join consumer c on c.consumer_id= o.consumer_id
+GROUP BY o.product_id having count(o.consumer_id) >= 3 )
+
+
+
+CREATE TABLE Shipment(
+Tracking_ID DECIMAL(10) PRIMARY KEY,
+Shipping_type VARCHAR(100)
+);
+
+CREATE TABLE PACKAGES(
+package_id DECIMAL(10) PRIMARY KEY,
+tracking_ID DECIMAL(10) NOT NULL,
+order_id DECIMAL(10) NOT NULL,
+FOREIGN KEY (order_id) REFERENCES orders,
+FOREIGN KEY (tracking_id) REFERENCES Shipment); 
+
+
+CREATE OR REPLACE PROCEDURE ADD_SHIPMENT(
+Tracking_ID_arg IN DECIMAL,
+Shipping_type_arg IN VARCHAR,
+Package_id_arg IN DECIMAL,
+order_id_arg IN DECIMAL)
+IS
+BEGIN
+INSERT INTO shipment(tracking_id, shipping_type)
+VALUES(tracking_id_arg, shipping_type_arg);
+
+INSERT INTO packages(package_id, tracking_id, order_id)
+VALUES(package_id_arg, tracking_id_arg, order_id_arg);
+END;
+
+BEGIN
+ADD_SHIPMENT(13, 'One-Day', 113, 888888);
+END;
+/ 
+
+BEGIN
+ADD_SHIPMENT(11, 'Express', 111, 999999);
+END;
+/ 
+
+BEGIN
+ADD_SHIPMENT(12, 'One-Day', 112, 999998);
+END;
+/ 
+
+Select s.tracking_id, s.shipping_type, p.order_id, p.package_id from Shipment s
+JOIN packages p on p.tracking_id=s.tracking_id  
+
+Select c.consumer_fname, c.consumer_lname, s.tracking_id, s.shipping_type, p.order_id, p.package_id from Shipment s
+JOIN packages p on p.tracking_id=s.tracking_id 
+JOIN Orders o on o.order_id = p.order_id
+JOIN consumer c on c.consumer_id= o.consumer_id
+
+
+
+CREATE INDEX idx_Product_IDON Product(Product_ID);
+
+
+
+
+ 
+
+
+
+ 
+
